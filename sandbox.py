@@ -1,163 +1,162 @@
 """
-Sandboxed Python REPL Tool for StatBot Pro.
-Executes pandas/matplotlib code in a restricted environment.
+Sandboxed Python REPL for safe agent code execution.
+
+Blocks: os, sys, subprocess, socket, requests, open(), eval, __import__, etc.
+Allows: pandas, numpy, matplotlib, seaborn, math, re, json, datetime, save_chart()
 """
 
+import base64
 import io
-import sys
-import os
-import uuid
-import contextlib
 import traceback
-from typing import Optional
-from datetime import datetime
+import uuid
+import os
+import re
+import math
+import json
+import datetime
 
+import matplotlib
+matplotlib.use("Agg")   # non-interactive backend
+import matplotlib.pyplot as plt
 
-# Blocked dangerous built-ins and modules
-BLOCKED_BUILTINS = {
-    "__import__",
-    "eval",
-    "exec",
-    "compile",
-    "open",
-    "input",
-    "breakpoint",
+# ── Banned module patterns ────────────────────────────────────────
+BANNED_MODULES = {
+    "os", "sys", "subprocess", "shutil", "socket",
+    "requests", "urllib", "http", "ftplib", "smtplib",
+    "pathlib", "glob", "pickle", "shelve", "sqlite3",
+    "ctypes", "cffi", "importlib", "builtins",
 }
 
-BLOCKED_MODULES = {
-    "os",
-    "sys",
-    "subprocess",
-    "shutil",
-    "pathlib",
-    "socket",
-    "urllib",
-    "http",
-    "requests",
-    "ftplib",
-    "smtplib",
-    "pickle",
-    "shelve",
-    "ctypes",
-    "multiprocessing",
-    "threading",
-    "importlib",
-    "glob",
-}
+BANNED_PATTERNS = [
+    r"\bopen\s*\(",
+    r"\beval\s*\(",
+    r"\bexec\s*\(",
+    r"\bcompile\s*\(",
+    r"\b__import__\s*\(",
+    r"\bgetattr\s*\(.*__",
+    r"\bsetattr\s*\(",
+    r"\bdelattr\s*\(",
+    r"\bbreakpoint\s*\(",
+    r"import\s+(" + "|".join(BANNED_MODULES) + r")\b",
+    r"from\s+(" + "|".join(BANNED_MODULES) + r")\s+import",
+]
+
+COMPILED_PATTERNS = [re.compile(p) for p in BANNED_PATTERNS]
 
 
-class SandboxViolationError(Exception):
+class SecurityError(Exception):
     pass
 
 
-def _create_safe_globals(df, charts_dir: str, charts_base_url: str) -> dict:
-    """
-    Build a restricted globals dict that exposes only safe libraries.
-    """
-    import pandas as pd
-    import numpy as np
-    import matplotlib
-    matplotlib.use("Agg")  # non-interactive backend
-    import matplotlib.pyplot as plt
-    import seaborn as sns
+def _static_scan(code: str) -> None:
+    """Pre-execution static analysis — raises SecurityError if dangerous patterns found."""
+    for pattern in COMPILED_PATTERNS:
+        if pattern.search(code):
+            raise SecurityError(
+                f"Blocked: code contains a disallowed pattern ({pattern.pattern!r})."
+            )
 
-    generated_charts = []
 
-    def safe_savefig(title: Optional[str] = None):
-        """Save current matplotlib figure and return public URL."""
-        filename = f"chart_{uuid.uuid4().hex[:8]}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-        filepath = os.path.join(charts_dir, filename)
-        plt.tight_layout()
-        plt.savefig(filepath, dpi=150, bbox_inches="tight", facecolor="white")
+def execute_safe(code: str, df_or_dfs) -> dict:
+    """
+    Execute `code` in a restricted namespace with df/dfs injected.
+    Returns:
+        {"output": str, "charts": [base64_png, ...], "error": None | str}
+    """
+    # ── Static scan ──
+    try:
+        _static_scan(code)
+    except SecurityError as e:
+        return {"output": "", "charts": [], "error": f"SecurityError: {e}"}
+
+    # ── Collect chart images ──
+    charts_b64: list[str] = []
+    chart_titles: list[str] = []
+
+    def save_chart(title: str = "") -> None:
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png", dpi=120, bbox_inches="tight",
+                    facecolor="#0d1117", edgecolor="none")
+        buf.seek(0)
+        charts_b64.append(base64.b64encode(buf.read()).decode("utf-8"))
+        chart_titles.append(title)
         plt.close("all")
-        url = f"{charts_base_url}/{filename}"
-        generated_charts.append({"filename": filename, "url": url, "title": title or "Chart"})
-        return url
 
-    safe_globals = {
+    # ── Capture stdout ──
+    output_buf = io.StringIO()
+
+    def safe_print(*args, **kwargs):
+        print(*args, **kwargs, file=output_buf)
+
+    # ── Restricted namespace ──
+    namespace = {
         "__builtins__": {
-            k: v
-            for k, v in __builtins__.items()  # type: ignore
-            if k not in BLOCKED_BUILTINS
-        }
-        if isinstance(__builtins__, dict)
-        else {
-            k: getattr(__builtins__, k)
-            for k in dir(__builtins__)
-            if k not in BLOCKED_BUILTINS
+            "abs": abs, "all": all, "any": any, "bool": bool,
+            "dict": dict, "dir": dir, "enumerate": enumerate,
+            "filter": filter, "float": float, "format": format,
+            "frozenset": frozenset, "getattr": getattr,
+            "hasattr": hasattr, "hash": hash, "int": int,
+            "isinstance": isinstance, "issubclass": issubclass,
+            "iter": iter, "len": len, "list": list, "map": map,
+            "max": max, "min": min, "next": next, "object": object,
+            "print": safe_print, "range": range, "repr": repr,
+            "reversed": reversed, "round": round, "set": set,
+            "slice": slice, "sorted": sorted, "str": str, "sum": sum,
+            "tuple": tuple, "type": type, "vars": vars, "zip": zip,
+            "True": True, "False": False, "None": None,
         },
-        "pd": pd,
-        "np": np,
-        "plt": plt,
-        "sns": sns,
-        "df": df,
-        "save_chart": safe_savefig,
-        "_generated_charts": generated_charts,
-        "print": print,
+        "pd":          __import__("pandas"),
+        "np":          __import__("numpy"),
+        "plt":         plt,
+        "sns":         __import__("seaborn"),
+        "math":        math,
+        "re":          re,
+        "json":        json,
+        "datetime":    datetime,
+        "save_chart":  save_chart,
+        "uuid":        uuid,
     }
 
-    return safe_globals
+    # ── Apply matplotlib dark theme ──
+    plt.style.use("dark_background")
+    plt.rcParams.update({
+        "axes.facecolor":   "#0d1117",
+        "figure.facecolor": "#0d1117",
+        "axes.edgecolor":   "#30363d",
+        "grid.color":       "#21262d",
+        "text.color":       "#e6edf3",
+        "axes.labelcolor":  "#8b949e",
+        "xtick.color":      "#8b949e",
+        "ytick.color":      "#8b949e",
+        "font.family":      "sans-serif",
+        "font.size":        10,
+    })
 
+    # ── Inject DataFrames ──
+    if isinstance(df_or_dfs, dict):
+        for name, sub_df in df_or_dfs.items():
+            safe_name = re.sub(r'[^a-zA-Z0-9_]', '_', name)
+            namespace[safe_name] = sub_df
+        namespace["dfs"] = df_or_dfs
+        if df_or_dfs:
+            first_key = list(df_or_dfs.keys())[0]
+            namespace["df"] = df_or_dfs[first_key]
+    else:
+        namespace["df"] = df_or_dfs
 
-class SandboxedREPL:
-    """
-    Executes Python/Pandas code safely in a sandboxed namespace.
-    Blocks OS, subprocess, and file system access.
-    """
-
-    def __init__(self, charts_dir: str, charts_base_url: str):
-        self.charts_dir = charts_dir
-        self.charts_base_url = charts_base_url
-        os.makedirs(charts_dir, exist_ok=True)
-
-    def execute(self, code: str, df) -> dict:
-        """
-        Execute code against the dataframe.
-        Returns: { output, charts, error }
-        """
-        # Static analysis — block dangerous patterns
-        self._static_check(code)
-
-        safe_globals = _create_safe_globals(self.charts_dir, self.charts_base_url)
-        safe_globals["df"] = df  # inject the real dataframe
-
-        stdout_capture = io.StringIO()
-        error = None
-        output = ""
-
-        try:
-            with contextlib.redirect_stdout(stdout_capture):
-                exec(compile(code, "<sandbox>", "exec"), safe_globals)  # noqa: S102
-            output = stdout_capture.getvalue()
-        except SandboxViolationError as e:
-            error = f"🚫 Sandbox violation: {e}"
-        except Exception:
-            error = traceback.format_exc()
-
-        charts = safe_globals.get("_generated_charts", [])
-
+    # ── Execute ──
+    try:
+        exec(code, namespace)   # noqa: S102
+        plt.close("all")
         return {
-            "output": output,
-            "charts": charts,
-            "error": error,
+            "output":  output_buf.getvalue(),
+            "charts":  list(zip(charts_b64, chart_titles)),
+            "error":   None,
         }
-
-    def _static_check(self, code: str):
-        """Raise if code contains obviously dangerous patterns."""
-        lower = code.lower()
-        dangerous_patterns = [
-            "os.system",
-            "os.popen",
-            "subprocess",
-            "shutil.rmtree",
-            "__import__",
-            "open(",
-            "socket.",
-            "requests.",
-            "urllib.",
-        ]
-        for pattern in dangerous_patterns:
-            if pattern in lower:
-                raise SandboxViolationError(
-                    f"Pattern '{pattern}' is not allowed in the sandbox."
-                )
+    except Exception:
+        plt.close("all")
+        return {
+            "output": output_buf.getvalue(),
+            "charts": list(zip(charts_b64, chart_titles)),
+            "error":  traceback.format_exc(limit=6),
+        }

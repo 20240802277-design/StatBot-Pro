@@ -16,14 +16,14 @@ import { analyzeCSV, previewDataset } from "@/lib/api";
 import type { DatasetInfo, AnalysisResponse, AnalysisHistoryItem } from "@/types";
 
 const EXAMPLE_QUESTIONS = [
-  "Show sales trend per region over time",
-  "Find top customers by total spend",
-  "Which product category has the highest revenue?",
-  "Show me a correlation heatmap of all numeric columns.",
-  "Are there any outliers in the data? Plot them.",
-  "Summarize the dataset with key statistics.",
-  "Find missing values and show which columns are affected.",
-  "Compare the distribution of values across categories.",
+  "Who are the genuinely loyal customers vs. those who only buy when there is a discount?",
+  "What behavioral patterns today predict high customer value over time?",
+  "Which geographies and demographics are commercially underlevered?",
+  "How should the brand restructure its promotional strategy to protect margins without losing volume?",
+  "What does the brand's ideal customer profile look like, and how can it acquire more of them?",
+  "Show the customer pyramid: distribute value tiers across the customer base.",
+  "Plot promo dependency vs. retention rate by customer segment.",
+  "Which product categories are associated with low purchase history vs high — proxy for entry-point vs retention?",
 ];
 
 const MAX_CHARS = 500;
@@ -335,21 +335,21 @@ export default function HomePage() {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--border-accent)] mb-6"
               style={{ background: "var(--cyan-glow)", color: "var(--cyan)", fontSize: "11px", fontWeight: 500 }}>
               <Sparkles size={11} />
-              Autonomous Data Analyst Agent — powered by LangChain + GPT-4o
+              D2C Customer Intelligence Agent — powered by LangChain + GPT-4o
             </div>
             <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight mb-4" style={{ letterSpacing: "-0.03em" }}>
-              Ask anything about<br />
-              <span className="gradient-text">your CSV data</span>
+              Unlock your brand's<br />
+              <span className="gradient-text">customer intelligence</span>
             </h1>
             <p className="text-[var(--text-secondary)] text-sm max-w-lg mx-auto leading-relaxed">
-              Upload a spreadsheet and ask complex analytical questions in plain English.
-              The AI writes pandas code, executes it safely in a sandbox, and returns answers with charts.
+              Built for D2C fashion brands. Upload your transactional dataset and discover who your loyal customers
+              truly are, how promo-dependent your revenue is, and where your next growth opportunity lies.
             </p>
-            <div className="flex items-center justify-center gap-8 mt-6 text-xs text-[var(--text-muted)]">
-              <span className="flex items-center gap-1.5"><Zap size={11} className="text-[var(--cyan)]" /> Instant parsing</span>
-              <span className="flex items-center gap-1.5"><BarChart2 size={11} className="text-[var(--violet)]" /> Auto charts</span>
-              <span className="flex items-center gap-1.5"><Activity size={11} className="text-[var(--emerald)]" /> Self-correcting</span>
-              <span className="flex items-center gap-1.5"><MessageSquare size={11} className="text-[var(--amber)]" /> Chat history</span>
+            <div className="flex items-center justify-center gap-6 mt-6 text-xs text-[var(--text-muted)] flex-wrap">
+              <span className="flex items-center gap-1.5"><Zap size={11} className="text-[var(--cyan)]" /> Customer Pyramid</span>
+              <span className="flex items-center gap-1.5"><BarChart2 size={11} className="text-[var(--violet)]" /> Promo vs. Loyalty</span>
+              <span className="flex items-center gap-1.5"><Activity size={11} className="text-[var(--emerald)]" /> Geo Opportunity</span>
+              <span className="flex items-center gap-1.5"><MessageSquare size={11} className="text-[var(--amber)]" /> Retention Playbook</span>
             </div>
           </div>
         )}

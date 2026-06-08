@@ -50,7 +50,7 @@ class SandboxViolationError(Exception):
     pass
 
 
-def _create_safe_globals(charts_dir: str, charts_base_url: str) -> dict:
+def _create_safe_globals(df, charts_dir: str, charts_base_url: str) -> dict:
     """
     Build a restricted globals dict that exposes only safe libraries.
     """
@@ -90,6 +90,7 @@ def _create_safe_globals(charts_dir: str, charts_base_url: str) -> dict:
         "np": np,
         "plt": plt,
         "sns": sns,
+        "df": df,
         "save_chart": safe_savefig,
         "_generated_charts": generated_charts,
         "print": print,

@@ -1,0 +1,5 @@
+order_id,product_id,amount,customer_id
+1,P101,250.0,C9001
+2,P102,150.0,C9002
+3,P101,120.0,C9001
+4,P103,450.0,C9003

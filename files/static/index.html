@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>StatBot Pro v2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0D1117;color:#E6EDF3;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:#00E5FF}
+header{background:#161B22;border-bottom:1px solid #30363D;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.logo{font-weight:700;font-size:15px}.logo span{color:#00E5FF}
+.badge{font-size:10px;border:1px solid #30363D;padding:2px 7px;border-radius:99px;color:#8B949E;margin-left:8px}
+.sid{font-size:11px;color:#8B949E}.sid code{color:#00E5FF}
+main{max-width:860px;width:100%;margin:0 auto;padding:24px 16px;flex:1;display:flex;flex-direction:column;gap:20px}
+/* drop zone */
+#dropzone{border:2px dashed #30363D;border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:.2s}
+#dropzone:hover,#dropzone.over{border-color:#00E5FF;background:#00E5FF08}
+#dropzone p{color:#8B949E;font-size:13px;margin-top:6px}
+#fileInput{display:none}
+/* file tags */
+#fileTags{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ftag{background:#1F6FEB18;border:1px solid #1F6FEB44;border-radius:8px;padding:3px 10px;font-size:12px;display:flex;align-items:center;gap:6px}
+.ftag button{background:none;border:none;color:#8B949E;cursor:pointer;font-size:14px;line-height:1}
+.ftag button:hover{color:#f85149}
+#joinRow{display:flex;align-items:center;gap:8px;background:#161B22;border:1px solid #30363D;border-radius:10px;padding:8px 12px}
+#joinRow input{background:none;border:none;outline:none;color:#E6EDF3;font-size:13px;flex:1}
+#joinRow label{font-size:12px;color:#8B949E;white-space:nowrap}
+/* preview table */
+.preview-box{background:#161B22;border:1px solid #30363D;border-radius:12px;overflow:hidden}
+.preview-box .ph{display:flex;justify-content:space-between;padding:8px 14px;border-bottom:1px solid #30363D;font-size:12px}
+.preview-box .ph span:first-child{color:#00E5FF;font-family:monospace}
+.preview-box .ph span:last-child{color:#8B949E}
+.preview-box .tscroll{overflow-x:auto;max-height:140px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#0D1117;color:#8B949E;font-weight:400;padding:6px 12px;text-align:left;white-space:nowrap}
+td{padding:5px 12px;color:#E6EDF3;border-top:1px solid #30363D40;white-space:nowrap}
+/* chat */
+#chat{display:flex;flex-direction:column;gap:16px}
+.q-bubble{display:flex;justify-content:flex-end}
+.q-inner{background:#1F6FEB18;border:1px solid #1F6FEB44;border-radius:12px;padding:10px 14px;max-width:80%}
+.q-inner p{font-size:13px}.q-inner small{color:#8B949E;font-size:11px;margin-top:4px;display:block}
+.a-box{background:#161B22;border:1px solid #30363D;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.a-box.err{border-color:#f8514944}
+.answer{font-size:13px;white-space:pre-wrap;line-height:1.7}
+.answer.err{color:#f85149}
+.chart-wrap{border:1px solid #30363D;border-radius:8px;overflow:hidden}
+.chart-wrap p{font-size:11px;color:#8B949E;padding:4px 10px;background:#0D1117}
+.chart-wrap img{width:100%;background:#fff}
+details summary{font-size:12px;color:#8B949E;cursor:pointer;user-select:none}
+details summary:hover{color:#00E5FF}
+pre{font-size:11px;background:#0D1117;border:1px solid #30363D;border-radius:8px;padding:10px;overflow-x:auto;color:#8B949E;font-family:monospace;line-height:1.6;margin-top:6px}
+.meta{font-size:11px;color:#8B949E}
+/* progress */
+#progress{background:#161B22;border:1px solid #30363D;border-radius:12px;padding:14px;display:none}
+#progress.show{display:block}
+.pbar-wrap{background:#0D1117;border-radius:99px;height:6px;margin:8px 0}
+.pbar{height:6px;border-radius:99px;background:linear-gradient(90deg,#00E5FF,#1F6FEB);transition:width .4s}
+.pmsg{font-size:13px;color:#E6EDF3}
+.ppct{font-size:11px;color:#8B949E}
+/* input */
+#inputBar{position:sticky;bottom:0;background:#161B2290;backdrop-filter:blur(12px);border-top:1px solid #30363D;padding:14px 16px}
+#inputBar .inner{max-width:860px;margin:0 auto}
+#inputWrap{display:flex;align-items:flex-end;gap:10px;border:1px solid #30363D;border-radius:12px;padding:10px 12px;background:#0D1117;transition:.2s}
+#inputWrap:focus-within{border-color:#00E5FF55;box-shadow:0 0 20px #00E5FF10}
+textarea{flex:1;background:none;border:none;outline:none;color:#E6EDF3;font-size:13px;resize:none;max-height:100px;overflow-y:auto;font-family:inherit;line-height:1.5}
+#sendBtn{width:36px;height:36px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0}
+#sendBtn.active{background:#00E5FF;color:#0D1117;box-shadow:0 0 16px #00E5FF44}
+#sendBtn.inactive{background:#30363D;color:#8B949E;cursor:not-allowed}
+.hint{font-size:11px;color:#8B949E;text-align:center;margin-top:6px}
+/* export btn */
+#exportBtn{display:none;background:none;border:1px solid #30363D;color:#E6EDF3;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;transition:.2s}
+#exportBtn:hover{border-color:#00E5FF55}
+#exportBtn.show{display:inline-flex;align-items:center;gap:5px}
+.spin{animation:spin 1s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div><span class="logo">StatBot<span>Pro</span></span><span class="badge">v2 — Week 2</span></div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <button id="exportBtn" onclick="exportPDF()">⬇ Export PDF</button>
+    <span class="sid">Session: <code id="sidDisplay"></code></span>
+  </div>
+</header>
+
+<main>
+  <!-- Hero -->
+  <div id="hero" style="text-align:center;padding:20px 0 8px">
+    <div style="display:inline-flex;align-items:center;gap:6px;border:1px solid #00E5FF33;background:#00E5FF08;border-radius:99px;padding:4px 14px;font-size:11px;color:#00E5FF;margin-bottom:16px">
+      ✦ Async · WebSocket · Sessions · Multi-file · PDF
+    </div>
+    <h1 style="font-size:2rem;font-weight:700;line-height:1.3;margin-bottom:8px">
+      Ask anything about<br><span style="color:#00E5FF">your CSV data</span>
+    </h1>
+    <p style="color:#8B949E;font-size:13px">Upload one or more files · Ask in plain English · Results stream in real-time</p>
+  </div>
+
+  <!-- Drop Zone -->
+  <div id="dropzone" onclick="document.getElementById('fileInput').click()"
+       ondragover="event.preventDefault();this.classList.add('over')"
+       ondragleave="this.classList.remove('over')"
+       ondrop="handleDrop(event)">
+    <div style="font-size:28px">📂</div>
+    <strong style="font-size:14px">Drop CSV / Excel files here</strong>
+    <p>Multiple files supported — set a join key below to merge them</p>
+    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" multiple onchange="handleFiles(this.files)"/>
+  </div>
+
+  <!-- File tags -->
+  <div id="fileTags" style="display:none"></div>
+
+  <!-- Join key -->
+  <div id="joinRow" style="display:none">
+    <label>🔗 Join on column:</label>
+    <input id="joinKey" placeholder="e.g. customer_id (optional)"/>
+  </div>
+
+  <!-- Dataset previews -->
+  <div id="previews"></div>
+
+  <!-- Chat -->
+  <div id="chat"></div>
+
+  <!-- Progress -->
+  <div id="progress">
+    <div class="pmsg" id="pmsg">Initialising…</div>
+    <div class="pbar-wrap"><div class="pbar" id="pbar" style="width:0%"></div></div>
+    <div class="ppct" id="ppct">0%</div>
+  </div>
+</main>
+
+<!-- Input bar -->
+<div id="inputBar" style="display:none">
+  <div class="inner">
+    <div id="inputWrap">
+      <textarea id="qInput" rows="1" placeholder="Ask a question about your data… (Enter to send)"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submit()}"
+        oninput="updateBtn()"></textarea>
+      <button id="sendBtn" class="inactive" onclick="submit()">➤</button>
+    </div>
+    <div class="hint">Code runs in a sandboxed environment · Shift+Enter for new line</div>
+  </div>
+</div>
+
+<script>
+const API   = '';          // same origin — served by FastAPI
+const WS    = `ws://${location.host}`;
+const sid   = Math.random().toString(36).slice(2,10);
+let   busy  = false;
+let   hasResult = false;
+
+document.getElementById('sidDisplay').textContent = sid;
+
+// ── File upload ──────────────────────────────────────────────────
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('over');
+  handleFiles(e.dataTransfer.files);
+}
+async function handleFiles(files){
+  for(const f of files) await uploadFile(f);
+}
+async function uploadFile(file){
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('session_id', sid);
+  const r = await fetch(`${API}/api/analysis/upload`,{method:'POST',body:fd});
+  const d = await r.json();
+  if(!r.ok){ alert('Upload failed: '+(d.detail||'unknown error')); return; }
+  addFileTag(d.alias);
+  addPreview(d.preview);
+  document.getElementById('inputBar').style.display = 'block';
+  document.getElementById('hero').style.display = 'none';
+  document.getElementById('joinRow').style.display = 'flex';
+}
+
+// ── File tags ─────────────────────────────────────────────────────
+function addFileTag(name){
+  const wrap = document.getElementById('fileTags');
+  wrap.style.display = 'flex';
+  const t = document.createElement('span');
+  t.className = 'ftag';
+  t.innerHTML = `📄 ${name} <button onclick="this.parentElement.remove();checkTags()">✕</button>`;
+  wrap.appendChild(t);
+}
+function checkTags(){
+  const wrap = document.getElementById('fileTags');
+  if(!wrap.children.length){ wrap.style.display='none'; }
+}
+
+// ── Preview table ─────────────────────────────────────────────────
+function addPreview(p){
+  const box = document.getElementById('previews');
+  const el  = document.createElement('div');
+  el.className = 'preview-box';
+  const cols = p.column_names;
+  const rows = (p.preview||[]).slice(0,3);
+  let ths = cols.map(c=>`<th>${c}<br><span style="color:#30363D;font-weight:400">${p.dtypes[c]||''}</span></th>`).join('');
+  let trs = rows.map(r=>`<tr>${cols.map(c=>`<td>${r[c]??'—'}</td>`).join('')}</tr>`).join('');
+  el.innerHTML = `
+    <div class="ph"><span>${p.filename}</span><span>${p.rows.toLocaleString()} rows × ${p.columns} cols</span></div>
+    <div class="tscroll"><table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
+  box.appendChild(el);
+}
+
+// ── Submit question ───────────────────────────────────────────────
+async function submit(){
+  const q = document.getElementById('qInput').value.trim();
+  if(!q || busy) return;
+  busy = true; updateBtn();
+  document.getElementById('qInput').value = '';
+
+  // Add user bubble
+  const chat = document.getElementById('chat');
+  const now  = new Date().toLocaleTimeString();
+  const qEl  = document.createElement('div');
+  qEl.className = 'q-bubble';
+  qEl.innerHTML = `<div class="q-inner"><p>${esc(q)}</p><small>${now}</small></div>`;
+  chat.appendChild(qEl);
+
+  // Show progress
+  setProgress('queued','Submitting job…',0);
+
+  // Submit job
+  const fd = new FormData();
+  fd.append('session_id', sid);
+  fd.append('question', q);
+  const jk = document.getElementById('joinKey').value.trim();
+  if(jk) fd.append('join_on', jk);
+
+  let jobId;
+  try{
+    const r  = await fetch(`${API}/api/analysis/ask`,{method:'POST',body:fd});
+    const d  = await r.json();
+    if(!r.ok) throw new Error(d.detail||'Server error');
+    jobId = d.job_id;
+  }catch(e){
+    showError(chat, q, e.message); busy=false; updateBtn(); hideProgress(); return;
+  }
+
+  // WebSocket
+  const ws = new WebSocket(`${WS}/ws/${jobId}`);
+  ws.onmessage = ev => {
+    const msg = JSON.parse(ev.data);
+    if(msg.type==='progress'){
+      setProgress(msg.step, msg.message, msg.pct);
+    } else if(msg.type==='done'){
+      hideProgress();
+      showResult(chat, msg);
+      busy=false; updateBtn(); hasResult=true;
+      document.getElementById('exportBtn').className='show';
+      ws.close();
+    } else if(msg.type==='error'){
+      hideProgress();
+      showError(chat, q, msg.error);
+      busy=false; updateBtn(); ws.close();
+    }
+  };
+  ws.onerror = () => setProgress('ws','Streaming…reconnecting',15);
+}
+
+// ── Render result ─────────────────────────────────────────────────
+function showResult(chat, res){
+  const box = document.createElement('div');
+  box.className = 'a-box';
+  let html = `<div class="answer">✦ ${esc(res.answer||'Done.')}</div>`;
+  for(const c of (res.charts||[])){
+    html += `<div class="chart-wrap"><p>${esc(c.title)}</p><img src="${c.url}" alt="${esc(c.title)}"/></div>`;
+  }
+  if(res.code_executed){
+    html += `<details><summary>📋 Show code (${res.iterations||0} iteration${res.iterations!==1?'s':''})</summary>
+             <pre>${esc(res.code_executed)}</pre></details>`;
+  }
+  html += `<div class="meta">⏱ ${((res.execution_time_ms||0)/1000).toFixed(1)}s</div>`;
+  box.innerHTML = html;
+  chat.appendChild(box);
+  box.scrollIntoView({behavior:'smooth'});
+}
+function showError(chat, q, msg){
+  const box = document.createElement('div');
+  box.className = 'a-box err';
+  box.innerHTML = `<div class="answer err">✕ ${esc(msg)}</div>`;
+  chat.appendChild(box);
+}
+
+// ── Progress ──────────────────────────────────────────────────────
+function setProgress(step,msg,pct){
+  const p = document.getElementById('progress');
+  p.className = 'show';
+  document.getElementById('pmsg').textContent = msg;
+  document.getElementById('pbar').style.width = pct+'%';
+  document.getElementById('ppct').textContent = pct+'% — '+step;
+  p.scrollIntoView({behavior:'smooth'});
+}
+function hideProgress(){ document.getElementById('progress').className=''; }
+
+// ── PDF Export ────────────────────────────────────────────────────
+async function exportPDF(){
+  const btn = document.getElementById('exportBtn');
+  btn.innerHTML='<span class="spin">⏳</span> Generating…';
+  try{
+    const r = await fetch(`${API}/api/sessions/${sid}/export-pdf`,{method:'POST'});
+    const d = await r.json();
+    if(r.ok){ window.open(d.url,'_blank'); }
+    else { alert('Export failed: '+(d.detail||'error')); }
+  }finally{
+    btn.innerHTML='⬇ Export PDF';
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function updateBtn(){
+  const q   = document.getElementById('qInput').value.trim();
+  const btn = document.getElementById('sendBtn');
+  btn.className = (q && !busy) ? 'active' : 'inactive';
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

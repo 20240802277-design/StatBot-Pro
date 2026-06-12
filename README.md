@@ -256,6 +256,17 @@ A static pattern scanner runs **before** every execution to catch injection atte
 5. **🗂️ Single-Folder Workspace Consolidation:**
    - Cleaned up the loose desktop workspace by placing all legacy directories and temporary zip archives into `/Users/sharma/Desktop/css.py/backups_and_old_versions/`, leaving the active app self-contained inside the `statbotpro/` folder.
 
+### 🔹 Week 4 — Real-time Thought Streaming & Containerization Orchestration
+1. **📡 Real-time Thought Streaming (FastAPI + Next.js SSE):**
+   - Engineered a custom LangChain Callback Handler `StreamingAgentCallbackHandler` running on a separate asynchronous task thread with `asyncio.Queue`.
+   - Exposed a new `/api/analysis/upload-and-ask-stream` route yielding a `StreamingResponse` (Server-Sent Events) that streams raw agent thought text, generated Python code snippets, execution outputs, and errors in real-time.
+   - Connected the Next.js frontend to fetch and parse streamed NDJSON lines in real time, rendering them inside the chat area.
+2. **🐳 Multi-Container Orchestration (Docker Compose):**
+   - Created multi-stage optimized `Dockerfile` configs for both the FastAPI backend and Next.js frontend.
+   - Set up `docker-compose.yml` allowing single-command startup (`docker-compose up --build`) of the fully containerized fullstack application.
+3. **🛡️ Sandbox Hardening (Jailbreak Scanner):**
+   - Hardened `sandbox.py` against Python jailbreak prompt injections by statically blocking standard sandbox escape patterns (like `__class__`, `__subclasses__`, `__mro__`, `__globals__`, and dynamic execution helpers like `getattr`, `eval`, `exec`).
+
 ---
 
 ## 📊 Feature Status
@@ -266,19 +277,19 @@ A static pattern scanner runs **before** every execution to catch injection atte
 | CSV / Excel upload & parsing | ✅ Done | pandas + openpyxl |
 | Dataset preview endpoint | ✅ Done | Column types, sample rows |
 | LangChain OpenAI Tools Agent | ✅ Done | GPT-4o, self-correcting |
-| Sandboxed Python REPL | ✅ Done | Module + builtin blocklist |
+| Sandboxed Python REPL | ✅ Done | Module + builtin blocklist + Static Jailbreak Scanner |
 | Local Execution Fallback (No Key/429) | ✅ Done | Runs actual pandas code locally |
 | Matplotlib / Seaborn chart generation | ✅ Done | Saved as static PNGs |
 | Next.js 16 frontend | ✅ Done | App Router, Turbopack |
 | Drag-and-drop file upload | ✅ Done | react-dropzone |
-| Animated agent thinking indicator | ✅ Done | Live elapsed timer |
+| Live Streamed Agent Thoughts | ✅ Done | Real-time steps, code, outputs streamed via SSE |
 | Conversation history + chat bubbles | ✅ Done | Fade-in animation |
 | Recent questions sidebar | ✅ Done | Last 10, re-clickable |
 | Copy answer to clipboard | ✅ Done | Hover-reveal button |
 | Export session as JSON | ✅ Done | Download from header |
 | 500-char input limit + live counter | ✅ Done | Amber warning at 80 left |
 | ⌘K keyboard shortcut | ✅ Done | Focus textarea globally |
-| Docker + Docker Compose | ✅ Done | |
+| Docker + Docker Compose | ✅ Done | Containerized frontend & backend services |
 
 ---
 
@@ -323,7 +334,6 @@ A static pattern scanner runs **before** every execution to catch injection atte
 
 <div align="center">
 
-**Built with ❤️ as an Internship Project @ Infotact Solutions**
 
 *If this project helped you, consider giving it a ⭐*
 

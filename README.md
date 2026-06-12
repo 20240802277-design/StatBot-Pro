@@ -2,7 +2,7 @@
 
 # ⚡ StatBot**Pro**
 
-### *Your Data Has a Story. Let AI Tell It.*
+### ***Your Data Has a Story. Let AI Tell It.***
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
